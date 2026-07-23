@@ -6,10 +6,9 @@ Kaleidoscopeは、`multi_purpose_mpc_ros`で使用しているPython/Tk製の
 オフラインtrajectory editorです。将来このツールだけを独立して公開できるよう、
 MPCの実行時コードから分離してこのディレクトリに配置しています。
 
-現段階の対応環境は、運営提供のAutomotive AI Challenge用Dockerイメージと、
-このリポジトリをcloneした環境です。このeditorはROS nodeではありません。
-現在ROS 2が担っているのは、実行コマンドの提供とpackage shareからの既定ファイル
-探索だけです。
+対応環境は、運営提供のAutomotive AI Challenge用Dockerイメージです。
+ホストのPython環境からの直接実行はサポートしません。このeditorはROS nodeではなく、
+Docker内のPython/Tkアプリとして起動します。
 
 ## 利用前提となるリポジトリ構成
 
@@ -24,48 +23,36 @@ aichallenge/workspace/src/aichallenge_submit/multi_purpose_mpc_ros/tools/kaleido
 `aichallenge_submit_launch`、およびmap・trajectoryファイルの配置や名前を変更しない
 ことを前提とします。この構成を変更した環境はサポート対象外です。
 
-## 既存のAI Challenge環境から起動する
+## 起動方法
 
-初回またはソース変更後に、リポジトリのルートでワークスペースをビルドします。
-
-```bash
-make autoware-build
-```
-
-Autoware commandコンテナへ入ります。
+ホスト側でAI Challengeリポジトリのルートへ移動し、Autoware commandコンテナへ
+入ります。
 
 ```bash
+cd /path/to/aichallenge-2025
 make autoware-bash
 ```
 
-コンテナ内で、従来と同じコマンドを実行します。
+コンテナ内でKaleidoscopeのディレクトリへ移動して起動します。
 
 ```bash
-ros2 run multi_purpose_mpc_ros trajectory_editor
+cd /aichallenge/workspace/src/aichallenge_submit/multi_purpose_mpc_ros/tools/kaleidoscope
+python3 -m kaleidoscope
 ```
 
 引数を省略すると、リポジトリ内のMPC用trajectoryとLanelet2 mapを自動検出し、
 周回経路として開きます。
 
-## Kaleidoscopeを直接起動する
-
-Autoware commandコンテナ内で次を実行します。
+任意のファイルを開く場合は、コンテナ内でパスを指定します。
 
 ```bash
-cd /aichallenge/workspace/src/aichallenge_submit/multi_purpose_mpc_ros/tools/kaleidoscope
 python3 -m kaleidoscope \
   --trajectory ../../env/final_ver3/traj_mincurv.csv \
   --osm ../../../aichallenge_submit_launch/map/lanelet2_map.osm \
   --circular
 ```
 
-リポジトリ内の既定ファイルを使用する場合は、引数を省略できます。
-
-```bash
-python3 -m kaleidoscope
-```
-
-任意のファイルを開く場合は次の引数を指定します。
+指定できる引数は次のとおりです。
 
 ```text
 --trajectory <trajectory CSV>
@@ -73,6 +60,21 @@ python3 -m kaleidoscope
 --circular                  周回経路
 --open                      非周回経路
 ```
+
+ホスト側でのvenv作成や`pip install`は不要です。ホスト側から
+`python3 -m kaleidoscope`を実行しないでください。
+
+## GUIが表示されない場合
+
+ホスト側で次を確認します。
+
+```bash
+export XAUTHORITY=~/.Xauthority
+./setup.bash doctor
+```
+
+`DISPLAY`または`XAUTHORITY`に警告が出る場合は、`setup.bash doctor`の案内に従って
+X11設定を修正してから、もう一度`make autoware-bash`でコンテナへ入ります。
 
 ## 入力ファイル
 
@@ -106,13 +108,16 @@ python3 -m kaleidoscope
 
 ## 実行時依存
 
+以下は運営Docker内に必要な依存関係です。利用者がホストへ個別にインストールする
+必要はありません。
+
 - Python 3.10以降
 - Tkinter（Ubuntuでは`python3-tk`）
 - defusedxml
 - PyYAML
 
-editor GUIは`rclpy`、ROS topic、ROS serviceを必要としません。NumPy、pandas、
-OpenCVにも依存していません。
+editor GUIは`rclpy`、ROS topic、ROS service、NumPy、pandas、OpenCVには依存して
+いません。
 
 ## 現段階の注意事項
 
