@@ -6,9 +6,10 @@ Kaleidoscope is the Python/Tk offline trajectory editor used by
 `multi_purpose_mpc_ros`. Its implementation is kept in this directory so the
 tool can later be published independently without moving MPC runtime code.
 
-At this stage, the supported environment is the organizer-provided AI
-Challenge Docker image and this repository checkout. The editor is not a ROS
-node; ROS 2 currently provides the installed command and package-share lookup.
+The supported environment is the organizer-provided Automotive AI Challenge
+Docker image. Running directly in the host Python environment is not
+supported. The editor is not a ROS node; it runs as a Python/Tk application
+inside the container.
 
 ## Required repository layout
 
@@ -19,37 +20,54 @@ Renaming or moving `multi_purpose_mpc_ros`, its `env/` directory, the sibling
 `aichallenge_submit_launch` package, or their map and trajectory files is not
 supported. The user is responsible for preserving this layout.
 
-## Run from the existing AI Challenge workspace
+## Run
 
-Build the workspace once and enter the Autoware command container:
+On the host, change to the AI Challenge repository root and enter the Autoware
+command container:
 
 ```bash
-make autoware-build
+cd /path/to/aichallenge-2025
 make autoware-bash
 ```
 
-Then run the existing compatible command:
-
-```bash
-ros2 run multi_purpose_mpc_ros trajectory_editor
-```
-
-To run the extracted package directly from the source checkout inside the
-container:
+Inside the container, change to the Kaleidoscope directory and run it:
 
 ```bash
 cd /aichallenge/workspace/src/aichallenge_submit/multi_purpose_mpc_ros/tools/kaleidoscope
+python3 -m kaleidoscope
+```
+
+With the required repository layout in place, the command automatically opens
+the built-in MPC trajectory and Lanelet2 map as a circular path. To select
+files explicitly, run inside the container:
+
+```bash
 python3 -m kaleidoscope \
   --trajectory ../../env/final_ver3/traj_mincurv.csv \
   --osm ../../../aichallenge_submit_launch/map/lanelet2_map.osm \
   --circular
 ```
 
-The default path discovery still supports the repository layout, so
-`python3 -m kaleidoscope` also opens the repository's built-in MPC preset when
-the sibling packages and data are present.
+Do not create a host virtual environment, install the package on the host, or
+run `python3 -m kaleidoscope` on the host.
+
+## GUI troubleshooting
+
+Run these commands on the host:
+
+```bash
+export XAUTHORITY=~/.Xauthority
+./setup.bash doctor
+```
+
+If `DISPLAY` or `XAUTHORITY` reports a warning, follow the doctor output to fix
+the X11 configuration, then enter the container again with
+`make autoware-bash`.
 
 ## Runtime dependencies
+
+The organizer Docker image must provide the following dependencies. Users do
+not need to install them separately on the host.
 
 - Python 3.10 or newer
 - Tkinter (`python3-tk` on Ubuntu)
